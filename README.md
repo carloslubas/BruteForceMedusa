@@ -15,24 +15,30 @@ Este repositório documenta um exercício prático de ataques de força bruta re
 | `README.md` | Este arquivo de documentação. |
 | `imagens/` | Contém capturas de tela do processo de ataque. |
 | `files/` | Contém as listas de palavras (`wordlists`) e os arquivos de resultado gerados pelo Medusa. |
-| `files/passwd.txt` | Lista de senhas usada nos ataques (Wordlist). |
-| `files/user.txt` | Lista de usuários usada nos ataques. |
 
 ### 🖼️ Arquivos na Pasta `imagens/`
 
 | Nome da Imagem | Descrição |
 | :--- | :--- |
 | `medusa_command.png` | Captura de tela do comando Medusa sendo executado. |
-
+| `criando-wordlists.png` | Criando wordlist com o comando echo. |
+| `enum4linux.png` | Captura de tela do comando enum4linux executado. |
+| `enum4linux-users.png` | Captura de tela do comando enum4linux listando os usuários. |
+| `ftp-failed.png` | Captura de tela do comando ftp com falha no login. |
+| `ftp-login-succes.png` | Captura de tela do comando ftp com suscesso no login. |
+| `medusa-bf-ftp.png` | Captura de tela do comando Medusa explorando o serviço ftp. |
+| `medusa-spaying-users-passwords.png` | Captura de tela do comando Medusa sendo executado. |
+| `Outros ` | Outros arquivos que comprovam a exploração do alvo. |
 
 ### 📄 Arquivos na Pasta `files/`
 
 | Nome do Arquivo | Uso |
 | :--- | :--- |
-| `passwd.txt` | Lista de senhas (`-P`) utilizada pelo Medusa. |
-| `user.txt` | Lista de usuários (`-U`) utilizada pelo Medusa. |
-| `ftp-login-success.png` | Confirma o login no serviço ftp. |
-
+| `pass.txt` | Lista de senhas (`-P`) utilizada pelo Medusa. |
+| `users.txt` | Lista de usuários (`-U`) utilizada pelo Medusa. |
+| `enum4_output` | Saida do comando enum4linux. |
+| `senhas_spray.txt` | Lusta de senhas spray. |
+| `smb_users` | Lista de usuários obtidas pelo comando enum4linux. |
 ---
 
 ## 📝 Passo a Passo dos Ataques
@@ -44,26 +50,25 @@ nmap -sn 10.147.16.0/24
 ```
 Com o alvo identificado, utilizamos o comando ping para confirmar se o host respondia, confirmando a execução.
 Mais uma vez, utilizamos o comando nmap para verificar as portas e as versões dos serviços rodando no alvo, que pode ser compravado com a imagem nmap-sV.png
+
 ```bash
 nmap -sV -p 21,22,80,445,139 10.147.16.11 
 ```
-
 ### 1. Ataque de Força Bruta ao Serviço FTP
-
 
 O primeiro alvo foi o serviço FTP (File Transfer Protocol).
 
 **Comando:**
 ```bash
-medusa -H 10.147.16.50 -u files/user.txt -p files/passwd.txt -M ftp
+medusa -h 10.147.16.50 -U files/user.txt -P files/passwd.txt -M ftp -t 6
 ```
-
 | Argumento | Descrição |
 | :--- | :--- |
-| `-H 10.147.16.50` | Define o Host alvo do ataque (IP do servidor). |
-| `-u files/user.txt` | Especifica o arquivo contendo a lista de Usuários. |
-| `-p files/passwd.txt` | Especifica o arquivo contendo a lista de Senhas. |
+| `-h 10.147.16.50` | Define o Host alvo do ataque (IP do servidor). |
+| `-U files/user.txt` | Especifica o arquivo contendo a lista de Usuários. |
+| `-P files/passwd.txt` | Especifica o arquivo contendo a lista de Senhas. |
 | `-M ftp` | Define o Módulo do serviço a ser atacado (FTP). |
+| `-t 6` | Define a quantidade de theads, torna o ataque mais rápido. |
 
 ### 1.1 Resultado do ataque ao ftp
 
@@ -92,5 +97,20 @@ enum4linux 10.147.16.50 | tee files/enum4l_output.txt
 | `medusa_success.png` | Captura de tela mostrando o resultado bem-sucedido da força bruta (SMB). |
 | `smbclient.png` | Confirma o login no cliente smb. |
 
+### 2.1 Resultado da exploração do serviço SMB
 
+Com o resultado do comando enu4linux, montamos a wordlists, para passar para o comando medusa:
+
+```bash
+medusa -h 10.147.16.50 -U files/smb_users.txt -P files/senhas_spray.txt -M smbnt -t 2 -T 50
+```
+
+O comando encontrou o usuário válido, msfadmin, com a senha msfadmin, o qual utilizamos para conectar no cliente smb, como evidência a imagem smbclient.png.
+
+#### 3 Resultado do exercício
+
+Foi demostrado aqui, por meio de arquivos obtidos, prints do terminal da máquina que executou os ataques (Kali Linux), a comprovação da exploração dos serviços de ftp e smb, do alvo, por meio das ferramentas nmap, ping, enum4linux e medusa.
+
+###🛑 Disclaimer
+Este material tem caráter estritamente educacional e de teste de segurança em ambientes controlados e autorizados. A realização de ataques de força bruta ou qualquer atividade de hacking sem a devida permissão é ilegal e antiética. Utilize este conhecimento de forma responsável.
 
